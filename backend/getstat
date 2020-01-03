@@ -1,0 +1,76 @@
+#!/bin/bash
+
+TARGET_CONFIG=./target
+
+function asText()
+{
+  read buf
+  echo $buf | awk -F': ' '{print "\"" $1 "\": \"" $2 "\"";}'
+}
+
+function asValue()
+{
+  read buf
+  echo $buf | awk -F': ' '{print "\"" $1 "\": " $2;}'
+}
+
+function get_stat()
+{
+  local _p1=$1
+  local _p2=$2
+  TEMPFILE=$(mktemp)
+  HOSTNAME=$_p1
+
+  boinccmd --host ${1}:${2} --passwd ${3} --get_tasks > $TEMPFILE
+
+  # name: string
+  cat $TEMPFILE | grep "  name:" > ${TEMPFILE}-name
+  # state: string (uploaded|downloaded...)
+  cat $TEMPFILE | grep "  state:" > ${TEMPFILE}-state
+  # atstate: string (EXECUTING|SUSPENDED|UNINITIALIZED...)
+  cat $TEMPFILE | grep "  active_task_state:" > ${TEMPFILE}-atstate
+  # fdone: floating number (100% = 1.0)
+  cat $TEMPFILE | grep "  fraction done:" > ${TEMPFILE}-fdone
+  # est: floating number (second minute)
+  cat $TEMPFILE | grep "  estimated CPU time remaining:" > ${TEMPFILE}-est
+
+  LINES=$(wc -l < ${TEMPFILE}-name)
+  echo "{\"hostname\": \"${HOSTNAME}\"," > ${TEMPFILE}-result
+  echo "\"stats\": [" >> ${TEMPFILE}-result
+
+  fflag2=1
+  for i in $(seq 1 $LINES)
+  do
+    if [ $fflag2 -eq 1 ]; then fflag2=0; else echo ',' >> ${TEMPFILE}-result; fi
+    echo "{" >> ${TEMPFILE}-result
+    echo "\"hostname\": \"${HOSTNAME}\"," >> ${TEMPFILE}-result
+    sed -n ${i}p ${TEMPFILE}-name | asText >> ${TEMPFILE}-result
+    echo -n "," >> ${TEMPFILE}-result
+    sed -n ${i}p ${TEMPFILE}-state | asText >> ${TEMPFILE}-result
+    echo -n "," >> ${TEMPFILE}-result
+    sed -n ${i}p ${TEMPFILE}-atstate | asText >> ${TEMPFILE}-result
+    echo -n "," >> ${TEMPFILE}-result
+    sed -n ${i}p ${TEMPFILE}-fdone | asValue >> ${TEMPFILE}-result
+    echo -n "," >> ${TEMPFILE}-result
+    sed -n ${i}p ${TEMPFILE}-est | asValue >> ${TEMPFILE}-result
+    echo "}" >> ${TEMPFILE}-result
+  done
+
+  echo "]}" >> ${TEMPFILE}-result
+  cat ${TEMPFILE}-result
+}
+
+fflag1=1
+echo "["
+cat ${TARGET_CONFIG} | grep -v "^#" |
+while read line
+do
+  if [ $fflag1 -eq 1 ]; then fflag1=0; else echo ','; fi
+  tgt=$(echo $line | awk '{print $1;}')
+  port=$(echo $line | awk '{print $2;}')
+  pw=$(echo $line | awk '{print $3;}')
+  if [ "${pw}" = "NOPASSWD" ]; then pw=""; fi
+  get_stat "$tgt" "$port" "$pw"
+done
+echo "]"
+

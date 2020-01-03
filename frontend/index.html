@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Vue.js develop version -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- Vue.js release version
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+
+    <!-- ElementUI CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- ElementUI JavaScript -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+    <link rel="shortcut icon" href="">
+    <link rel="stylesheet" href="./main.css">
+    <meta name="robots" content="noindex,follow">
+    <title>BoincVue - Simple BOINC Status Viewer</title>
+  </head>
+  <body>
+
+    <noscript>
+      <div class="noscript">
+        <span class="bold">BoincVue</span> is Status Viewer for <a href="https://boinc.berkeley.edu/">Boinc</a>.<br>
+        This page is using
+          <a href="https://vuejs.org/">Vue.js</a>
+          and
+          <a href="https://element.eleme.io/">ElementUI</a>
+        technology.<br>
+        You must <a href="https://www.google.com/search?q=how+to+turn+on+javascript">allow</a> for JavaScript runnning.
+      </div>
+    </noscript>
+    <div id="BoincVueApp" class="boinc-vue-app app-hidden">
+      <div class="app-title">
+        <span class="app-name">BoincVue</span>
+      </div>
+      <div v-if="status.length > 0" class="app-content">
+
+        <el-table id="Table" :data="[null]" :height="tableHeight">
+          <el-table-column
+            v-for="host in status"
+            class="app-column"
+            width="250"
+          >
+            <element slot="header">
+              <div class="app-title">{{host.hostname}}</div>
+            </element>
+            <div v-for="stat in cardData(host.hostname)">
+              <el-card class="app-card">
+                <div class="app-card-upper">
+                  <el-progress
+                    :percentage="progressValue(stat)"
+                    :color="progressColor(stat)"
+                    :width="20"
+                    :format="progressText"
+                    stroke-linecap="butt"
+                    type="circle"
+                    class="app-progress"
+                  ></el-progress>
+                  <div class="app-card-upper-text">{{stat.name}}</div>
+                </div>
+                <div>
+                  <div class="app-card-lower">{{stat.state}} {{stat.active_task_state}}</div>
+                </div>
+              </el-card>
+            </div>
+          </el-table-column>
+        </el-table>
+        <div id="Footer" class="app-times">
+          <span class="lastdt" v-if="lastUpdate !== null"> Last update: {{lastUpdate}}</span>
+          TableHeight:{{tableHeight}}
+        </div>
+      </div>
+      <span v-else>NOW LOADING...</span>
+    </div>
+    <script src="./main.js"></script>
+  </body>
+</html>

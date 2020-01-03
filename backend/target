@@ -1,0 +1,4 @@
+# boincvue backend target host configuration
+# no blankline
+# <ip addr or hostname> <port> <gui rpc password>
+127.0.0.1 31416 NOPASSWD
