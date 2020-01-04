@@ -1,0 +1,71 @@
+body {
+  color: white;
+  background-color:  black;
+}
+
+.noscript {
+  background-color: yellow;
+  border: .2em double red;
+  border-radius: 5%;
+  margin: 2em;
+  padding: .8em;
+}
+
+.app-hidden {
+  display: none;
+}
+
+.app-title {
+  text-align: center;
+}
+
+.app-times {
+  color: aliceblue;
+  background-color: black;
+  width: 100%;
+}
+
+.app-name {
+  font-family: serif;
+  font-weight: bold;
+}
+
+td {
+  vertical-align: top !important;
+}
+
+.app-progress {
+  float: left;
+}
+
+.el-progress__text {
+  font-weight: bold;
+}
+
+.bold {font-weight: bold;}
+
+.app-card {
+  width: 240px;
+}
+
+.app-card-content {
+  display: flex;
+  flex-direction: row;
+}
+
+.app-card-upper {
+  margin-left: 1em;
+}
+
+.app-card-upper-text {
+  margin-left: 2em;
+}
+
+.app-card-lower {
+  margin-left: 1em;
+  text-align: justify;
+}
+
+.el-card__body {
+  padding: .2em;
+}
