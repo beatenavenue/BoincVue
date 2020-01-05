@@ -1,0 +1,11 @@
+#!/bin/bash
+
+OUTPUTDIR=/var/lib/boincvue
+
+while true
+do
+  bash getstat | jq '.' | tee ${OUTPUTDIR}/next.tmp
+  rm ${OUTPUTDIR}/result.json
+  mv ${OUTPUTDIR}/next.tmp ${OUTPUTDIR}/result.json
+  sleep 3
+done

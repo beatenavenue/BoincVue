@@ -1,0 +1,12 @@
+[Unit]
+Description = Boinc status viewer
+Wants = boinc-client.service
+After = boinc-client.service
+
+[Service]
+ExecStart = /usr/lib/boincvue/runner
+Restart = always
+ExecStop = /bin/kill $MAINPID
+
+[Install]
+WantedBy = multi-user.target
