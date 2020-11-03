@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TARGET_CONFIG=./target
+source ./utils
 
 function asText()
 {
@@ -22,39 +23,50 @@ function get_stat()
   HOSTNAME=$_p1
 
   boinccmd --host ${1}:${2} --passwd ${3} --get_tasks > $TEMPFILE
+  local _st=$?
 
-  # name: string
-  cat $TEMPFILE | grep "  name:" > ${TEMPFILE}-name
-  # state: string (uploaded|downloaded...)
-  cat $TEMPFILE | grep "  state:" > ${TEMPFILE}-state
-  # atstate: string (EXECUTING|SUSPENDED|UNINITIALIZED...)
-  cat $TEMPFILE | grep "  active_task_state:" > ${TEMPFILE}-atstate
-  # fdone: floating number (100% = 1.0)
-  cat $TEMPFILE | grep "  fraction done:" > ${TEMPFILE}-fdone
-  # est: floating number (second minute)
-  cat $TEMPFILE | grep "  estimated CPU time remaining:" > ${TEMPFILE}-est
-
-  LINES=$(wc -l < ${TEMPFILE}-name)
   echo "{\"hostname\": \"${HOSTNAME}\"," > ${TEMPFILE}-result
   echo "\"stats\": [" >> ${TEMPFILE}-result
 
-  fflag2=1
-  for i in $(seq 1 $LINES)
-  do
-    if [ $fflag2 -eq 1 ]; then fflag2=0; else echo ',' >> ${TEMPFILE}-result; fi
-    echo "{" >> ${TEMPFILE}-result
-    echo "\"hostname\": \"${HOSTNAME}\"," >> ${TEMPFILE}-result
-    sed -n ${i}p ${TEMPFILE}-name | asText >> ${TEMPFILE}-result
-    echo -n "," >> ${TEMPFILE}-result
-    sed -n ${i}p ${TEMPFILE}-state | asText >> ${TEMPFILE}-result
-    echo -n "," >> ${TEMPFILE}-result
-    sed -n ${i}p ${TEMPFILE}-atstate | asText >> ${TEMPFILE}-result
-    echo -n "," >> ${TEMPFILE}-result
-    sed -n ${i}p ${TEMPFILE}-fdone | asValue >> ${TEMPFILE}-result
-    echo -n "," >> ${TEMPFILE}-result
-    sed -n ${i}p ${TEMPFILE}-est | asValue >> ${TEMPFILE}-result
-    echo "}" >> ${TEMPFILE}-result
-  done
+  if [ "${_st}" -eq 0 ]
+  then
+    # name: string
+    cat $TEMPFILE | selectvalue "name" > ${TEMPFILE}-name
+    # state: string (uploaded|downloaded...)
+    cat $TEMPFILE | selectvalue "state" "unknown" > ${TEMPFILE}-state
+    # atstate: string (EXECUTING|SUSPENDED|UNINITIALIZED...)
+    cat $TEMPFILE | selectvalue "active_task_state" > ${TEMPFILE}-atstate
+    # fdone: floating number (100% = 1.0)
+    cat $TEMPFILE \
+      | sed "s/signal:.*/fraction done: 1.0/g" \
+      | selectvalue "fraction done" 0 > ${TEMPFILE}-fdone
+    # est: floating number (second minute)
+    cat $TEMPFILE | selectvalue "estimated CPU time remaining" > ${TEMPFILE}-est
+
+    LINES=$(wc -l < ${TEMPFILE}-name)
+
+    fflag2=1
+    for i in $(seq 1 $LINES)
+    do
+      if [ $fflag2 -eq 1 ]; then fflag2=0; else echo ',' >> ${TEMPFILE}-result; fi
+      echo "{" >> ${TEMPFILE}-result
+      echo "\"hostname\": \"${HOSTNAME}\"," >> ${TEMPFILE}-result
+      sed -n ${i}p ${TEMPFILE}-name | asText >> ${TEMPFILE}-result
+      echo -n "," >> ${TEMPFILE}-result
+      sed -n ${i}p ${TEMPFILE}-state | asText >> ${TEMPFILE}-result
+      echo -n "," >> ${TEMPFILE}-result
+      sed -n ${i}p ${TEMPFILE}-atstate | asText >> ${TEMPFILE}-result
+      echo -n "," >> ${TEMPFILE}-result
+      sed -n ${i}p ${TEMPFILE}-fdone | asValue >> ${TEMPFILE}-result
+      echo -n "," >> ${TEMPFILE}-result
+      sed -n ${i}p ${TEMPFILE}-est | asValue >> ${TEMPFILE}-result
+      echo "}" >> ${TEMPFILE}-result
+    done
+
+  else
+    echo "{\"error\":\"error\"}" >> ${TEMPFILE}-result
+
+  fi
 
   echo "]}" >> ${TEMPFILE}-result
   cat ${TEMPFILE}-result

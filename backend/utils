@@ -1,0 +1,66 @@
+#!/bin/bash
+# ######################## #
+#  BOINC VUE UTILITY       #
+# 2020 kitten-machine.club #
+# ######################## #
+
+
+# STDIN: boinccmd tasks list
+# STDOUT: tasks count
+function tasks_count()
+{
+  tempfile=$(mktemp)
+  cat - > ${tempfile}
+
+  count=$(               \
+    cat ${tempfile}      \
+    | grep -E "^[0-9]+)" \
+    | sed "s/).*//g"     \
+    | tail -1            \
+  )
+
+  echo ${count:=0}
+}
+
+# STDIN: boinccmd tasks list
+# STDOUT: key-value
+# Param1: task index
+# Param2: key name
+# Param3: empty value (default: null)
+function getvalue()
+{
+  tempfile=$(mktemp)
+  cat - > ${tempfile}
+  idx=${1:-0}
+  key="${2:-'invalidkey'}"
+  emptyval="${3:-null}"
+
+  kvp=$(                                  \
+    cat ${tempfile}                       \
+    | sed "/^[0-9].*/i endmark"           \
+    | sed -n -e "/^${idx})/,/^endmark/ p" \
+    | grep "${key}"                       \
+    | tail -1                             \
+  )
+
+  echo ${kvp:="${key}: ${emptyval}"}
+}
+
+
+# STDIN: boinccmd tasks list
+# STDOUT: key-value selection
+# Param1: key name
+# Param2: empty value (default: null)
+function selectvalue()
+{
+  tempfile=$(mktemp)
+  cat - > ${tempfile}
+  key="${1:-'invalidkey'}"
+  emptyval="${2:-null}"
+  count=$(cat ${tempfile} | tasks_count)
+
+  for idx in $(seq 1 ${count})
+  do cat ${tempfile} | getvalue "${idx}" "${key}" "${emptyval}"
+  done 
+}
+
